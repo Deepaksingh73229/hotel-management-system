@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { ThemeProvider } from "@/components/theme/theme-provider";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,9 +29,31 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TooltipProvider delayDuration={0}>
+            <SidebarProvider>
+              <AppSidebar />
+
+              <SidebarInset>
+                <div className="flex h-14 items-center px-4 md:hidden">
+                  <SidebarTrigger className="-ml-1" />
+                </div>
+
+                <main className="flex flex-1 flex-col py-5">{children}</main>
+              </SidebarInset>
+            </SidebarProvider>
+          </TooltipProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
