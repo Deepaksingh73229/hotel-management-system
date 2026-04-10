@@ -1,12 +1,7 @@
-export default function Page() {
-  return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-        <div className="aspect-video rounded-xl bg-muted/50" />
-        <div className="aspect-video rounded-xl bg-muted/50" />
-        <div className="aspect-video rounded-xl bg-muted/50" />
-      </div>
-      <div className="min-h-screen flex-1 rounded-xl bg-muted/50 md:min-h-min" />
-    </div>
-  )
+import { redirect } from "next/navigation";
+
+// The root URL just redirects.
+// AuthProvider + layout guards handle the login vs dashboard decision.
+export default function RootPage() {
+  redirect("/dashboard");
 }
