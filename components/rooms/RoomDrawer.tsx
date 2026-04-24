@@ -5,9 +5,9 @@ import { format } from "date-fns";
 import { Loader2, BedDouble, Tag, StickyNote, Clock } from "lucide-react";
 
 import {
-    Sheet, SheetContent, SheetHeader,
-    SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
+    Dialog, DialogContent, DialogHeader,
+    DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import {
     Select, SelectContent, SelectItem,
     SelectTrigger, SelectValue,
@@ -71,21 +71,21 @@ export function RoomDrawer({ room, open, onOpenChange }: RoomDrawerProps) {
     };
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-                <SheetHeader className="mb-5">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader className="mb-5 pr-8">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                             <BedDouble className="w-5 h-5 text-primary" />
                         </div>
                         <div>
-                            <SheetTitle className="text-base">Room {room.roomNumber}</SheetTitle>
-                            <SheetDescription className="text-xs">
+                            <DialogTitle className="text-base">Room {room.roomNumber}</DialogTitle>
+                            <DialogDescription className="text-xs">
                                 {room.roomType.name} · {room.floor.label ?? `Floor ${room.floor.floorNumber}`}
-                            </SheetDescription>
+                            </DialogDescription>
                         </div>
                     </div>
-                </SheetHeader>
+                </DialogHeader>
 
                 {/* Current status */}
                 <div className="flex items-center justify-between mb-5">
@@ -200,7 +200,7 @@ export function RoomDrawer({ room, open, onOpenChange }: RoomDrawerProps) {
                         }
                     </Button>
                 </div>
-            </SheetContent>
-        </Sheet>
+            </DialogContent>
+        </Dialog>
     );
 }

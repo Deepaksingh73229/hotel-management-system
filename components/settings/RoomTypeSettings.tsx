@@ -14,7 +14,7 @@ import { SettingsSection, SettingsDivider, FieldLabel } from "./SettingsShared";
 import {
     useRoomTypes, useRoomType,
     useCreateRoomType, useUpdateRoomType,
-} from "@/hooks/rooms/useRooms";
+} from "@/hooks/settings/useSettings";
 import type { CreateRoomTypePayload } from "@/types";
 
 const EMPTY: CreateRoomTypePayload = {

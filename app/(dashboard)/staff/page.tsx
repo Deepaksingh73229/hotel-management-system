@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { UserPlus, ShieldOff } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 
 import { PageHeader } from "@/components/common/PageHeader";
 import { StaffTable } from "@/components/staff/StaffTable";
@@ -10,35 +9,18 @@ import { InviteStaffDrawer } from "@/components/staff/InviteStaffDrawer";
 import { EditStaffDrawer } from "@/components/staff/EditStaffDrawer";
 import { Button } from "@/components/ui/button";
 import { usePermission } from "@/hooks/auth/usePermission";
-import client from "@/services/api/client";
-import type { AuthUser } from "@/types";
-
-// ─── Fetch roles from the backend ─────────────────────────────────────────────
-// We need real ObjectIds to pass to the create/edit forms.
-const useRoles = () =>
-    useQuery({
-        queryKey: ["roles"],
-        queryFn: async () => {
-            const res = await client.get<{
-                success: boolean;
-                data: { roles: { _id: string; name: string; displayName: string; isActive: boolean }[] };
-            }>("/roles");
-            return res.data.data.roles.filter((r) => r.isActive);
-        },
-        staleTime: Infinity,   // roles never change at runtime
-    });
-
-// ─────────────────────────────────────────────────────────────────────────────
+import { useRoles } from "@/hooks/staff/useStaff";
+import type { StaffUser } from "@/services/user.service";
 
 export default function StaffPage() {
     const { isAdmin } = usePermission();
-
-    const [inviteOpen, setInviteOpen] = useState(false);
-    const [editUser, setEditUser] = useState<AuthUser | null>(null);
-
     const { data: roles = [], isLoading: rolesLoading } = useRoles();
 
-    // Hard guard — this route is admin-only but we double-check client-side.
+    const [inviteOpen, setInviteOpen] = useState(false);
+    const [editUser, setEditUser] = useState<StaffUser | null>(null);
+
+    // Hard client-side guard — the sidebar already hides this for non-admins
+    // but we defend in depth here too.
     if (!isAdmin) {
         return (
             <div className="flex flex-col items-center justify-center h-full py-32 gap-3 text-center">
@@ -62,7 +44,7 @@ export default function StaffPage() {
                 action={
                     <Button
                         onClick={() => setInviteOpen(true)}
-                        disabled={rolesLoading}
+                        disabled={rolesLoading || roles.length === 0}
                     >
                         <UserPlus className="w-4 h-4 mr-2" />
                         Invite staff

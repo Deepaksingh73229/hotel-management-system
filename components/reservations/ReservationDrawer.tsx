@@ -5,9 +5,9 @@ import { format } from "date-fns";
 import { Loader2, BedDouble, User, CalendarDays, CreditCard, MessageSquare } from "lucide-react";
 
 import {
-    Sheet, SheetContent, SheetHeader,
-    SheetTitle, SheetDescription,
-} from "@/components/ui/sheet";
+    Dialog, DialogContent, DialogHeader,
+    DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import {
     Select, SelectContent, SelectItem,
     SelectTrigger, SelectValue,
@@ -93,21 +93,21 @@ export function ReservationDrawer({ reservation, open, onOpenChange }: Reservati
 
     return (
         <>
-            <Sheet open={open} onOpenChange={onOpenChange}>
-                <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-                    <SheetHeader className="mb-5">
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader className="mb-5 pr-8">
                         <div className="flex items-start justify-between gap-3">
                             <div>
-                                <SheetTitle className="font-mono text-base tracking-wide">
+                                <DialogTitle className="font-mono text-base tracking-wide">
                                     {current.confirmationNumber}
-                                </SheetTitle>
-                                <SheetDescription className="text-xs mt-0.5">
+                                </DialogTitle>
+                                <DialogDescription className="text-xs mt-0.5">
                                     {guestFullName(current.primaryGuest)}
-                                </SheetDescription>
+                                </DialogDescription>
                             </div>
                             <ReservationStatusBadge status={status} />
                         </div>
-                    </SheetHeader>
+                    </DialogHeader>
 
                     <div className="space-y-5">
 
@@ -250,8 +250,8 @@ export function ReservationDrawer({ reservation, open, onOpenChange }: Reservati
                             </>
                         )}
                     </div>
-                </SheetContent>
-            </Sheet>
+                </DialogContent>
+            </Dialog>
 
             {/* ── Check-out confirm ─────────────────────────────────── */}
             <ConfirmDialog

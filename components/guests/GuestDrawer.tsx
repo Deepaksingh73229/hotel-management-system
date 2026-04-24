@@ -1,12 +1,12 @@
 "use client";
 
 import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-} from "@/components/ui/sheet";
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
 import { GuestForm } from "./GuestForm";
 import { useCreateGuest, useUpdateGuest } from "@/hooks/guests/useGuests";
 import { ClientError } from "@/services/api/client";
@@ -34,22 +34,19 @@ export function GuestDrawer({ open, onOpenChange, guest }: GuestDrawerProps) {
     };
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent
-                side="right"
-                className="w-full sm:max-w-lg overflow-y-auto"
-            >
-                <SheetHeader className="mb-6">
-                    <SheetTitle>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader className="mb-6 pr-8">
+                    <DialogTitle>
                         {isEdit ? "Edit guest profile" : "Add new guest"}
-                    </SheetTitle>
-                    <SheetDescription>
+                    </DialogTitle>
+                    <DialogDescription>
                         {isEdit
                             ? `Editing profile for ${guest.firstName} ${guest.lastName}.`
                             : "Fill in the guest details to create a new profile."
                         }
-                    </SheetDescription>
-                </SheetHeader>
+                    </DialogDescription>
+                </DialogHeader>
 
                 <GuestForm
                     defaultValues={isEdit ? guest : null}
@@ -58,7 +55,7 @@ export function GuestDrawer({ open, onOpenChange, guest }: GuestDrawerProps) {
                     onCancel={() => onOpenChange(false)}
                     submitLabel={isEdit ? "Save changes" : "Create guest"}
                 />
-            </SheetContent>
-        </Sheet>
+            </DialogContent>
+        </Dialog>
     );
 }

@@ -1,33 +1,32 @@
-import { Check, Circle } from "lucide-react";
 import { format } from "date-fns";
+import { Check, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
     STATUS_LIFECYCLE,
     RESERVATION_STATUS_META,
     type Reservation,
     type ReservationStatus,
-} from "@/types";
+} from "@/types/reservation.types";
+import type { StatusHistoryEntry } from "@/services/reservation.service";
 
-// Map each lifecycle status to its timestamp on the reservation
-const STATUS_TIMESTAMPS: Partial<Record<ReservationStatus, (r: Reservation) => string | undefined>> = {
+// Map lifecycle status → timestamp field
+const TIMESTAMPS: Partial<Record<ReservationStatus, (r: Reservation) => string | undefined>> = {
+    enquiry: (r) => r.createdAt,
     confirmed: (r) => r.createdAt,
     checked_in: (r) => r.actualCheckInAt,
     checked_out: (r) => r.actualCheckOutAt,
-    cancelled: (r) => r.cancelledAt,
 };
 
-interface ReservationStatusStepperProps {
+interface Props {
     reservation: Reservation;
+    statusHistory: StatusHistoryEntry[];
 }
 
-export function ReservationStatusStepper({ reservation }: ReservationStatusStepperProps) {
-    const currentStatus = reservation.status;
-
-    // Handle terminal statuses not in the main lifecycle
-    const isTerminal = ["cancelled", "no_show"].includes(currentStatus);
-
+export function ReservationStatusStepper({ reservation, statusHistory }: Props) {
+    const current = reservation.status;
+    const isTerminal = ["cancelled", "no_show"].includes(current);
     const currentIndex = STATUS_LIFECYCLE.indexOf(
-        isTerminal ? "confirmed" : currentStatus
+        isTerminal ? "confirmed" : (current as ReservationStatus)
     );
 
     return (
@@ -37,20 +36,20 @@ export function ReservationStatusStepper({ reservation }: ReservationStatusStepp
                 const isDone = index < currentIndex || (index === currentIndex && !isTerminal);
                 const isCurrent = index === currentIndex && !isTerminal;
                 const isFuture = index > currentIndex || isTerminal;
-                const tsGetter = STATUS_TIMESTAMPS[status];
-                const timestamp = tsGetter ? tsGetter(reservation) : undefined;
+                const ts = TIMESTAMPS[status]?.(reservation);
+
+                // Find the history entry for this status
+                const histEntry = statusHistory.find((h) => h.toStatus === status);
 
                 return (
                     <div key={status} className="flex gap-3">
-                        {/* ── Left column: dot + line ─────────────────── */}
+                        {/* Dot + connector */}
                         <div className="flex flex-col items-center">
                             <div className={cn(
-                                "w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 z-10",
-                                isDone
-                                    ? "bg-primary border-primary"
-                                    : isCurrent
-                                        ? "bg-background border-primary"
-                                        : "bg-background border-border"
+                                "w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                                isDone ? "bg-primary border-primary" :
+                                    isCurrent ? "bg-background border-primary" :
+                                        "bg-background border-border"
                             )}>
                                 {isDone
                                     ? <Check className="w-3 h-3 text-primary-foreground" />
@@ -59,7 +58,6 @@ export function ReservationStatusStepper({ reservation }: ReservationStatusStepp
                                         : null
                                 }
                             </div>
-                            {/* Connector line — not shown after last item */}
                             {index < STATUS_LIFECYCLE.length - 1 && (
                                 <div className={cn(
                                     "w-0.5 flex-1 my-1 min-h-[24px]",
@@ -68,30 +66,33 @@ export function ReservationStatusStepper({ reservation }: ReservationStatusStepp
                             )}
                         </div>
 
-                        {/* ── Right column: label + timestamp ─────────── */}
+                        {/* Label + meta */}
                         <div className="pb-5 min-w-0">
                             <p className={cn(
                                 "text-sm font-medium leading-tight",
-                                isFuture
-                                    ? "text-muted-foreground"
-                                    : "text-foreground"
+                                isFuture ? "text-muted-foreground" : "text-foreground"
                             )}>
                                 {meta.label}
                             </p>
-                            {timestamp && (
+                            {ts && (
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                    {format(new Date(timestamp), "dd MMM yyyy, HH:mm")}
+                                    {format(new Date(ts), "dd MMM yyyy, HH:mm")}
                                 </p>
                             )}
-                            {/* Cancellation note */}
+                            {histEntry?.changedBy && (
+                                <p className="text-xs text-muted-foreground/70 mt-0.5">
+                                    by {histEntry.changedBy.name}
+                                </p>
+                            )}
+                            {/* Terminal status branch */}
                             {status === "confirmed" && isTerminal && (
                                 <p className={cn(
                                     "text-xs mt-1 font-medium",
-                                    currentStatus === "cancelled"
+                                    current === "cancelled"
                                         ? "text-red-600 dark:text-red-400"
                                         : "text-orange-600 dark:text-orange-400"
                                 )}>
-                                    {RESERVATION_STATUS_META[currentStatus].label}
+                                    {RESERVATION_STATUS_META[current as ReservationStatus].label}
                                     {reservation.cancellationReason && ` · ${reservation.cancellationReason}`}
                                 </p>
                             )}

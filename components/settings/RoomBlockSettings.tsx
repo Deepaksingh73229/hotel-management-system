@@ -12,10 +12,11 @@ import {
     SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { SettingsSection, FieldLabel } from "./SettingsShared";
+import { useRooms } from "@/hooks/rooms/useRooms";
 import {
-    useRooms, useRoomBlocks,
+    useRoomBlocks,
     useCreateRoomBlock, useResolveRoomBlock,
-} from "@/hooks/rooms/useRooms";
+} from "@/hooks/settings/useSettings";
 import type { RoomBlockReason } from "@/types";
 
 const REASONS: Array<{ value: RoomBlockReason; label: string }> = [

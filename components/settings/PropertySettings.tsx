@@ -5,7 +5,7 @@ import { Loader2, Building2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SettingsSection, FieldLabel } from "./SettingsShared";
-import { useProperty, useCreateProperty, useUpdateProperty } from "@/hooks/rooms/useRooms";
+import { useProperty, useCreateProperty, useUpdateProperty } from "@/hooks/settings/useSettings";
 import type { CreatePropertyPayload } from "@/types";
 
 const EMPTY: CreatePropertyPayload = {

@@ -1,23 +1,33 @@
 "use client";
 
-import { format } from "date-fns";
-import { Copy, Check, CalendarDays } from "lucide-react";
 import { useState, useCallback } from "react";
+import { format } from "date-fns";
+import { Search, Copy, Check, CalendarDays } from "lucide-react";
 
 import {
     Table, TableBody, TableCell,
     TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import {
+    Select, SelectContent, SelectItem,
+    SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { ReservationStatusBadge } from "./ReservationStatusBadge";
 import { EmptyState } from "@/components/common/EmptyState";
+import { useReservations } from "@/hooks/reservations/useReservations";
 import { guestFullName } from "@/types";
-import type { Reservation, ReservationStatus } from "@/types";
+import {
+    RESERVATION_STATUS_META,
+    type ReservationStatus,
+    type Reservation,
+} from "@/types/reservation.types";
 
-// ─── Copy-to-clipboard confirmation number ────────────────────────────────────
-function ConfirmationNumber({ value }: { value: string }) {
+// ─── Copyable confirmation number ─────────────────────────────────────────────
+function ConfNumber({ value }: { value: string }) {
     const [copied, setCopied] = useState(false);
 
     const copy = useCallback((e: React.MouseEvent) => {
@@ -36,7 +46,6 @@ function ConfirmationNumber({ value }: { value: string }) {
             <button
                 onClick={copy}
                 className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                aria-label="Copy confirmation number"
             >
                 {copied
                     ? <Check className="w-3 h-3 text-green-500" />
@@ -47,34 +56,71 @@ function ConfirmationNumber({ value }: { value: string }) {
     );
 }
 
-interface ReservationTableProps {
-    reservations: Reservation[];
-    isLoading: boolean;
-    page: number;
-    totalPages: number;
-    total: number;
-    limit: number;
-    onPageChange: (p: number) => void;
+const STATUS_OPTIONS = Object.entries(RESERVATION_STATUS_META) as [
+    ReservationStatus,
+    (typeof RESERVATION_STATUS_META)[ReservationStatus]
+][];
+
+const LIMIT = 20;
+
+interface Props {
     onRowClick: (r: Reservation) => void;
 }
 
-export function ReservationTable({
-    reservations,
-    isLoading,
-    page,
-    totalPages,
-    total,
-    limit,
-    onPageChange,
-    onRowClick,
-}: ReservationTableProps) {
+export function ReservationTable({ onRowClick }: Props) {
+    const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<ReservationStatus | "all">("all");
+    const [page, setPage] = useState(1);
+
+    const { data, isLoading } = useReservations({
+        search: search || undefined,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        page,
+        limit: LIMIT,
+    });
+
+    const reservations = data?.reservations ?? [];
+    const pagination = data?.pagination;
+
     return (
         <div className="space-y-4">
+            {/* Filters */}
+            <div className="flex flex-wrap gap-3">
+                <div className="relative flex-1 min-w-48 max-w-sm">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                        placeholder="Search confirmation # or guest name…"
+                        value={search}
+                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                        className="pl-8 h-9 text-sm"
+                    />
+                </div>
+
+                {/* Status pills */}
+                <div className="flex flex-wrap gap-1.5">
+                    {[{ key: "all", label: "All" }, ...STATUS_OPTIONS.map(([k, v]) => ({ key: k, label: v.label }))].map(
+                        ({ key, label }) => (
+                            <button
+                                key={key}
+                                onClick={() => { setStatusFilter(key as any); setPage(1); }}
+                                className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${statusFilter === key
+                                        ? "bg-foreground text-background border-foreground"
+                                        : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                                    }`}
+                            >
+                                {label}
+                            </button>
+                        )
+                    )}
+                </div>
+            </div>
+
+            {/* Table */}
             <div className="border border-border rounded-xl overflow-hidden bg-card">
                 <Table>
                     <TableHeader>
                         <TableRow className="hover:bg-transparent">
-                            <TableHead className="w-[160px]">Confirmation #</TableHead>
+                            <TableHead className="w-40">Confirmation #</TableHead>
                             <TableHead>Guest</TableHead>
                             <TableHead>Room type</TableHead>
                             <TableHead>Check-in</TableHead>
@@ -87,7 +133,7 @@ export function ReservationTable({
 
                     <TableBody>
                         {/* Skeleton */}
-                        {isLoading && Array.from({ length: 8 }).map((_, i) => (
+                        {isLoading && Array.from({ length: 6 }).map((_, i) => (
                             <TableRow key={i}>
                                 {Array.from({ length: 8 }).map((_, j) => (
                                     <TableCell key={j}>
@@ -118,9 +164,8 @@ export function ReservationTable({
                                 onClick={() => onRowClick(res)}
                             >
                                 <TableCell>
-                                    <ConfirmationNumber value={res.confirmationNumber} />
+                                    <ConfNumber value={res.confirmationNumber} />
                                 </TableCell>
-
                                 <TableCell>
                                     <div className="min-w-0">
                                         <p className="text-sm font-medium text-foreground truncate">
@@ -133,32 +178,24 @@ export function ReservationTable({
                                         )}
                                     </div>
                                 </TableCell>
-
                                 <TableCell className="text-sm text-muted-foreground">
                                     {res.roomType.name}
-                                    {res.room && (
-                                        <span className="ml-1 text-xs font-medium text-foreground">
-                                            · {res.room.roomNumber}
+                                    {(res.room as any)?.roomNumber && (
+                                        <span className="ml-1.5 font-medium text-foreground">
+                                            · {(res.room as any).roomNumber}
                                         </span>
                                     )}
                                 </TableCell>
-
                                 <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                                     {format(new Date(res.checkInDate), "dd MMM yyyy")}
                                 </TableCell>
-
                                 <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                                     {format(new Date(res.checkOutDate), "dd MMM yyyy")}
                                 </TableCell>
-
-                                <TableCell className="text-sm text-right">
-                                    {res.nights}
-                                </TableCell>
-
+                                <TableCell className="text-sm text-right">{res.nights}</TableCell>
                                 <TableCell className="text-sm font-medium text-right whitespace-nowrap">
                                     ₹{res.totalAmount.toLocaleString("en-IN")}
                                 </TableCell>
-
                                 <TableCell>
                                     <ReservationStatusBadge status={res.status} />
                                 </TableCell>
@@ -169,20 +206,20 @@ export function ReservationTable({
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {pagination && pagination.pages > 1 && (
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <p>
-                        Showing {((page - 1) * limit) + 1}–{Math.min(page * limit, total)} of {total}
+                        Showing {((page - 1) * LIMIT) + 1}–{Math.min(page * LIMIT, pagination.total)} of {pagination.total}
                     </p>
                     <div className="flex gap-2">
                         <Button variant="outline" size="sm"
                             disabled={page === 1}
-                            onClick={() => onPageChange(page - 1)}>
+                            onClick={() => setPage((p) => p - 1)}>
                             Previous
                         </Button>
                         <Button variant="outline" size="sm"
-                            disabled={page === totalPages}
-                            onClick={() => onPageChange(page + 1)}>
+                            disabled={page === pagination.pages}
+                            onClick={() => setPage((p) => p + 1)}>
                             Next
                         </Button>
                     </div>

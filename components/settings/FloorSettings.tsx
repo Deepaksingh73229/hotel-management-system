@@ -11,7 +11,7 @@ import {
     SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { SettingsSection, SettingsDivider, FieldLabel } from "./SettingsShared";
-import { useFloors, useCreateFloor, useUpdateFloor } from "@/hooks/rooms/useRooms";
+import { useFloors, useCreateFloor, useUpdateFloor } from "@/hooks/settings/useSettings";
 
 export function FloorSettings() {
     const { data: floors = [] } = useFloors();

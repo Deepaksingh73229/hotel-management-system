@@ -1,92 +1,91 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, UserPlus } from "lucide-react";
 
 import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-    SheetFooter,
-} from "@/components/ui/sheet";
+    Dialog, DialogContent, DialogHeader,
+    DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+    Select, SelectContent, SelectItem,
+    SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { useCreateUser } from "@/hooks/staff/useUsers";
-import { ClientError } from "@/services/api/client";
 
-// ─── Password rules mirror the backend passwordSchema ─────────────────────────
+import { useRegisterStaff } from "@/hooks/staff/useStaff";
+import { ClientError } from "@/services/api/client";
+import type { Role } from "@/services/user.service";
+
+// ─── Validation mirrors the backend auth.validators.js registerSchema ─────────
+// Controller: name (min 2), email (email), phone (optional regex), password
+//             (min 8, uppercase, lowercase, number, special char), role (ObjectId)
+
 const passwordSchema = z
     .string()
     .min(8, "At least 8 characters")
-    .regex(/[A-Z]/,       "Must contain an uppercase letter")
-    .regex(/[a-z]/,       "Must contain a lowercase letter")
-    .regex(/[0-9]/,       "Must contain a number")
+    .regex(/[A-Z]/, "Must contain an uppercase letter")
+    .regex(/[a-z]/, "Must contain a lowercase letter")
+    .regex(/[0-9]/, "Must contain a number")
     .regex(/[^A-Za-z0-9]/, "Must contain a special character");
 
 const schema = z.object({
-    name:     z.string().trim().min(2, "Name must be at least 2 characters"),
-    email:    z.string().trim().toLowerCase().email("Enter a valid email"),
-    phone:    z.string().trim().regex(/^\+?[0-9]{7,15}$/, "Invalid phone number").optional().or(z.literal("")),
+    name: z.string().trim().min(2, "Name must be at least 2 characters"),
+    email: z.string().trim().toLowerCase().email("Enter a valid email"),
+    phone: z.string().trim().regex(/^\+?[0-9]{7,15}$/, "Invalid phone number")
+        .optional().or(z.literal("")),
     password: passwordSchema,
-    role:     z.string().min(1, "Select a role"),
+    role: z.string().min(1, "Select a role"),          // must be a role ObjectId
 });
 
 type FormValues = z.infer<typeof schema>;
 
-// ─── Hardcoded role options ───────────────────────────────────────────────────
-// In production you'd fetch these from GET /api/roles.
-// For now these match exactly what your Role model seeds.
-const ROLE_OPTIONS = [
-    { value: "ADMIN_ROLE_ID",      label: "Admin" },
-    { value: "FRONT_DESK_ROLE_ID", label: "Front Desk" },
-];
+const Field = ({ label, error, children }: {
+    label: string;
+    error?: string;
+    children: React.ReactNode;
+}) => (
+    <div className="space-y-1.5">
+        <Label className="text-xs font-medium text-muted-foreground">{label}</Label>
+        {children}
+        {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+);
 
 interface InviteStaffDrawerProps {
-    open:         boolean;
+    open: boolean;
     onOpenChange: (open: boolean) => void;
-    /** Pass actual role ObjectIds from your backend seed here. */
-    roles:        { _id: string; name: string; displayName: string }[];
+    roles: Role[];
 }
 
 export function InviteStaffDrawer({ open, onOpenChange, roles }: InviteStaffDrawerProps) {
-    const createUser = useCreateUser();
+    const registerMutation = useRegisterStaff();
 
     const {
-        register,
-        handleSubmit,
-        setValue,
-        reset,
+        register, handleSubmit, control, reset, setError,
         formState: { errors },
-        setError,
     } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
+    const handleClose = () => { reset(); onOpenChange(false); };
+
     const onSubmit = (values: FormValues) => {
-        createUser.mutate(
+        registerMutation.mutate(
             {
-                name:     values.name,
-                email:    values.email,
-                phone:    values.phone || undefined,
+                name: values.name,
+                email: values.email,
+                phone: values.phone || undefined,
                 password: values.password,
-                role:     values.role,
+                role: values.role,     // ObjectId — required by controller
             },
             {
-                onSuccess: () => {
-                    reset();
-                    onOpenChange(false);
-                },
+                onSuccess: () => handleClose(),
+
                 onError: (err) => {
+                    // Surface field-level validation errors from backend (422)
                     if (err instanceof ClientError && err.errors) {
                         err.errors.forEach((e) => {
                             setError(e.field as keyof FormValues, { message: e.message });
@@ -98,85 +97,97 @@ export function InviteStaffDrawer({ open, onOpenChange, roles }: InviteStaffDraw
     };
 
     return (
-        <Sheet open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
-            <SheetContent className="w-full sm:max-w-md overflow-y-auto">
-                <SheetHeader className="mb-6">
-                    <SheetTitle>Invite staff member</SheetTitle>
-                    <SheetDescription>
-                        Create a new staff account. They can log in immediately.
-                    </SheetDescription>
-                </SheetHeader>
+        <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+            <DialogContent className="w-full max-w-[calc(100%-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader className="mb-6 pr-8">
+                    <DialogTitle className="flex items-center gap-2">
+                        <UserPlus className="w-4 h-4" />
+                        Invite staff member
+                    </DialogTitle>
+                    <DialogDescription>
+                        Create a new staff account. They can log in immediately with the password you set.
+                    </DialogDescription>
+                </DialogHeader>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
 
-                    {/* Name */}
-                    <div className="space-y-1.5">
-                        <Label htmlFor="name">Full name</Label>
-                        <Input id="name" placeholder="Jane Smith" {...register("name")}
-                            className={errors.name ? "border-destructive" : ""} />
-                        {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-                    </div>
+                    <Field label="Full name *" error={errors.name?.message}>
+                        <Input
+                            placeholder="Jane Smith"
+                            {...register("name")}
+                            className={errors.name ? "border-destructive" : ""}
+                        />
+                    </Field>
 
-                    {/* Email */}
-                    <div className="space-y-1.5">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" placeholder="jane@hotel.com" {...register("email")}
-                            className={errors.email ? "border-destructive" : ""} />
-                        {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-                    </div>
+                    <Field label="Email *" error={errors.email?.message}>
+                        <Input
+                            type="email"
+                            placeholder="jane@hotel.com"
+                            autoComplete="off"
+                            {...register("email")}
+                            className={errors.email ? "border-destructive" : ""}
+                        />
+                    </Field>
 
-                    {/* Phone */}
-                    <div className="space-y-1.5">
-                        <Label htmlFor="phone">Phone <span className="text-muted-foreground">(optional)</span></Label>
-                        <Input id="phone" type="tel" placeholder="+91 98765 43210" {...register("phone")}
-                            className={errors.phone ? "border-destructive" : ""} />
-                        {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
-                    </div>
+                    <Field label="Phone (optional)" error={errors.phone?.message}>
+                        <Input
+                            type="tel"
+                            placeholder="+91 98765 43210"
+                            {...register("phone")}
+                            className={errors.phone ? "border-destructive" : ""}
+                        />
+                    </Field>
 
-                    {/* Role */}
-                    <div className="space-y-1.5">
-                        <Label>Role</Label>
-                        <Select onValueChange={(v) => setValue("role", v)}>
-                            <SelectTrigger className={errors.role ? "border-destructive" : ""}>
-                                <SelectValue placeholder="Select a role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {roles.map((r) => (
-                                    <SelectItem key={r._id} value={r._id}>
-                                        {r.displayName}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {errors.role && <p className="text-xs text-destructive">{errors.role.message}</p>}
-                    </div>
+                    <Field label="Role *" error={errors.role?.message}>
+                        <Controller
+                            name="role"
+                            control={control}
+                            render={({ field }) => (
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                    <SelectTrigger className={errors.role ? "border-destructive" : ""}>
+                                        <SelectValue placeholder="Select a role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {roles.map((r) => (
+                                            <SelectItem key={r._id} value={r._id}>
+                                                {r.displayName}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
+                    </Field>
 
-                    {/* Password */}
-                    <div className="space-y-1.5">
-                        <Label htmlFor="password">Password</Label>
-                        <Input id="password" type="password" placeholder="••••••••" {...register("password")}
-                            className={errors.password ? "border-destructive" : ""} />
-                        {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
-                        <p className="text-xs text-muted-foreground">
-                            Min 8 chars with uppercase, lowercase, number, and special character.
+                    <Field label="Password *" error={errors.password?.message}>
+                        <Input
+                            type="password"
+                            placeholder="••••••••"
+                            {...register("password")}
+                            className={errors.password ? "border-destructive" : ""}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Min 8 characters · uppercase · lowercase · number · special character
                         </p>
-                    </div>
+                    </Field>
 
-                    <SheetFooter className="pt-4 gap-2">
-                        <Button type="button" variant="outline"
-                            onClick={() => { reset(); onOpenChange(false); }}
-                            disabled={createUser.isPending}>
+                    <DialogFooter className="gap-2 pt-2">
+                        <Button
+                            type="button" variant="outline"
+                            onClick={handleClose}
+                            disabled={registerMutation.isPending}
+                        >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={createUser.isPending}>
-                            {createUser.isPending
+                        <Button type="submit" disabled={registerMutation.isPending}>
+                            {registerMutation.isPending
                                 ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating…</>
                                 : "Create account"
                             }
                         </Button>
-                    </SheetFooter>
+                    </DialogFooter>
                 </form>
-            </SheetContent>
-        </Sheet>
+            </DialogContent>
+        </Dialog>
     );
 }

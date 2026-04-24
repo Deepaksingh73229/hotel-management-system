@@ -7,7 +7,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { RoomGrid } from "@/components/rooms/RoomGrid";
 import { RoomFilters } from "@/components/rooms/RoomFilters";
 import { RoomDrawer } from "@/components/rooms/RoomDrawer";
-import { useRooms, useFloors, useRoomTypes } from "@/hooks/rooms/useRooms";
+import { useRooms } from "@/hooks/rooms/useRooms";
+import { useFloors, useRoomTypes } from "@/hooks/settings/useSettings";
 import type { Room, RoomStatus } from "@/types";
 
 const getErrorMessage = (error: unknown) => {

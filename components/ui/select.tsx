@@ -6,9 +6,13 @@ import { Select as SelectPrimitive } from "radix-ui"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-function Select({
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.Root>) {
+function Select(props: React.ComponentProps<typeof SelectPrimitive.Root>) {
+  const hasValueProp = Object.prototype.hasOwnProperty.call(props, "value")
+
+  if (hasValueProp && props.value === undefined) {
+    return <SelectPrimitive.Root data-slot="select" {...props} value="" />
+  }
+
   return <SelectPrimitive.Root data-slot="select" {...props} />
 }
 

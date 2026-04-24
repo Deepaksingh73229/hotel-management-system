@@ -146,6 +146,7 @@ export function GuestTable({ onEdit }: GuestTableProps) {
                                         <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold flex-shrink-0">
                                             {initials(guest.firstName, guest.lastName)}
                                         </div>
+                                        
                                         <div className="min-w-0">
                                             <p className="text-sm font-medium text-foreground truncate">
                                                 {guestFullName(guest)}

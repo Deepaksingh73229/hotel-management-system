@@ -15,7 +15,7 @@ import { SettingsSection, SettingsDivider, FieldLabel } from "./SettingsShared";
 import {
     useRatePlans, useRatePlan, useRatePlanPreview, useRoomTypes,
     useCreateRatePlan, useUpdateRatePlan, useDeactivateRatePlan,
-} from "@/hooks/rooms/useRooms";
+} from "@/hooks/settings/useSettings";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import type { CreateRatePlanPayload, UpdateRatePlanPayload, RatePlanAdjustmentType } from "@/types";
 

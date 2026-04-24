@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
-import type { RoleName } from "@/types";
+
+type RoleName = "admin" | "front_desk";
 
 const STYLES: Record<RoleName, string> = {
     admin:
@@ -8,24 +9,21 @@ const STYLES: Record<RoleName, string> = {
         "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800",
 };
 
-const LABELS: Record<RoleName, string> = {
-    admin:      "Admin",
-    front_desk: "Front Desk",
-};
-
 interface RoleBadgeProps {
-    role:       RoleName;
+    name: string;
+    displayName: string;
     className?: string;
 }
 
-export function RoleBadge({ role, className }: RoleBadgeProps) {
+export function RoleBadge({ name, displayName, className }: RoleBadgeProps) {
+    const style = STYLES[name as RoleName] ?? STYLES.front_desk;
     return (
         <span className={cn(
             "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
-            STYLES[role] ?? STYLES.front_desk,
+            style,
             className
         )}>
-            {LABELS[role] ?? role}
+            {displayName}
         </span>
     );
 }

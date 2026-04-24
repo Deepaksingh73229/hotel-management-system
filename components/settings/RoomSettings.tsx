@@ -16,10 +16,11 @@ import {
 } from "@/components/ui/table";
 import { RoomStatusBadge } from "@/components/rooms/RoomStatusBadge";
 import { SettingsSection, FieldLabel } from "./SettingsShared";
+import { useRooms, useUpdateRoomStatus} from "@/hooks/rooms/useRooms";
 import {
-    useRooms, useFloors, useRoomTypes,
-    useCreateRoom, useUpdateAnyRoom, useUpdateRoomStatus,
-} from "@/hooks/rooms/useRooms";
+    useFloors, useRoomTypes,
+    useCreateRoom, useUpdateAnyRoom
+} from "@/hooks/settings/useSettings";
 import type { CreateRoomPayload, RoomStatus } from "@/types";
 
 const STATUSES: RoomStatus[] = [
